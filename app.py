@@ -7,7 +7,7 @@
 
 from dash import Dash, dcc, html
 from dash.dependencies import Input, Output
-#import dash_daq as daq
+import dash_daq as daq
 from collections import deque
 import pandas as pd
 import plotly
@@ -43,7 +43,21 @@ app.layout = html.Div(style={'backgroundColor': colors['black']}, children=[
             dcc.Graph(id='live-update-graph', animate=True),
             dcc.Interval(id='interval-component', interval=1*1000, n_intervals=0)
         ])
-    ])    
+    ]),
+    html.Div(className='block', children=[
+        daq.Gauge(
+            value=5,
+            label='Pažnja',
+            max=100,
+            min=0,
+        ),
+        daq.Gauge(
+            value=5,
+            label='Meditacija',
+            max=100,
+            min=0,
+        )
+    ])
 ])
 
 @app.callback(Output('live-update-graph', 'figure'),
@@ -51,7 +65,16 @@ app.layout = html.Div(style={'backgroundColor': colors['black']}, children=[
 
 def get_live_updates(n):
     df = pd.read_csv('data.csv')
-    fig = px.line(df, y=['delta','theta','lowalpha','highalpha', 'lowbeta', 'highbeta', 'lowgama', 'highgama'], title="EEG") 
+    mode = 'lines'
+    fig = px.scatter()
+    fig.add_scatter(name='Delta', y=df['delta'], mode=mode)
+    fig.add_scatter(name='Theta', y=df['theta'], mode=mode)
+    fig.add_scatter(name='LowAlpha', y=df['lowalpha'], mode=mode)
+    fig.add_scatter(name='HighAlpha', y=df['highalpha'], mode=mode)
+    fig.add_scatter(name='LowBeta', y=df['lowbeta'], mode=mode)
+    fig.add_scatter(name='HighBeta', y=df['highbeta'], mode=mode)
+    fig.add_scatter(name='LowGamma', y=df['lowgamma'], mode=mode)
+    fig.add_scatter(name='HighGamma', y=df['highgamma'], mode=mode)
     return fig
 
 if __name__ == '__main__':
