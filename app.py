@@ -5,6 +5,7 @@
 # Run `py app.py` in vscode
 # visit http://127.0.0.1:8050/ in web browser
 
+from turtle import width
 from dash import Dash, dcc, html
 from dash.dependencies import Input, Output
 import dash_daq as daq
@@ -19,7 +20,7 @@ import time
 app = Dash(__name__)
 
 colors = {
-    'black':'#1a1a1a',
+    'black':'#000000',
     'lightblack': '#1B1B1B',
     'red': '#da2c43',
     'mintgreen': '#98ff98',
@@ -33,18 +34,19 @@ colors = {
     'white': '#f1f1f1',
     'lightpurple':'#e0b0ff',
     'purple':'#873dbd',
-    'orange':'#ffad01'
+    'orange':'#ffad01',
+    'darkgreyblue': '#232734'
 }
 
 app.layout = html.Div(style={'backgroundColor': colors['black']}, children=[
-    html.Div(className='block', children=[
+    html.Div(style={'backgroundColor': colors['lightblack'], 'marginLeft':'auto','marginRight':'25', 'width':'50%'}, className='block', children=[
         html.Div([
-            dcc.Graph(id='live-update-graph', animate=True)
+            dcc.Graph(id='live-update-graph', animate=True, style={'width': '100%',})
         ])
     ]),
-    html.Div(className='block', children=[
-       dcc.Graph(id='live-update-attention', animate=True),
-       dcc.Graph(id='live-update-meditation', animate=True)
+    html.Div(style={'backgroundColor': colors['lightblack'],'marginLeft':'auto','marginRight':'25', 'width':'50%'}, className='block', children=[
+       dcc.Graph(id='live-update-attention', animate=True, style={'width': '50%', 'display': 'inline-block'}),
+       dcc.Graph(id='live-update-meditation', animate=True, style={'width': '50%', 'display': 'inline-block'})
     ]),
     dcc.Interval(id='interval-component', interval=1*1000, n_intervals=0)
 ])
@@ -65,30 +67,37 @@ def get_live_updates(n):
     fig1.add_scatter(name='HighBeta', y=df['highbeta'], mode=mode)
     fig1.add_scatter(name='LowGamma', y=df['lowgamma'], mode=mode)
     fig1.add_scatter(name='HighGamma', y=df['highgamma'], mode=mode)
-
+    fig1.update_layout(paper_bgcolor = colors["lightblack"], plot_bgcolor=colors["lightblack"], font = {'color': colors["white"]})
+    fig1.update_xaxes(showline=True, linewidth=1, linecolor=colors['darkgreyblue'], gridcolor=colors['darkgreyblue'])
+    fig1.update_yaxes(showline=True, linewidth=1, linecolor=colors['darkgreyblue'], gridcolor=colors['darkgreyblue'])
     row = len(df)-1
     specdata1=df.iloc[row, 0]
     specdata2=df.iloc[row, 1]
-    # fig2= px.scatter()
-    # fig2.add_scatter(name='Attention', y=df['attention'], mode=mode)
-    # fig3= px.scatter()
-    # fig3.add_scatter(name='Meditation', y=df['meditation'], mode=mode)
-    # fig2= px.pie(values=[specdata1, 100-specdata1], hole=.3, title='Pažnja')
-    # fig3= px.pie(values=[specdata2, 100-specdata2], hole=.3, title='Meditacija')
+  
     fig2= go.Figure(go.Indicator(
     mode = "gauge+number",
     value = specdata1,
     domain = {'x': [0, 1], 'y': [0, 1]},
     title = {'text': "Pažnja"},
-    gauge = {'axis': {'range': [None, 100]}},
+    gauge = {'axis': {'range': [None, 100], 'tickcolor': colors['white']},
+    'bar': {'color': colors["lightblue"]},
+    'bgcolor': colors["lightblack"],
+    'bordercolor': colors["lightblack"]
+    },
     ))
     fig3 = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = specdata2,
     domain = {'x': [0, 1], 'y': [0, 1]},
     title = {'text': "Meditacija"},
-    gauge = {'axis': {'range': [None, 100]}},
+    gauge = {'axis': {'range': [None, 100], 'tickcolor': colors['white']},
+    'bar': {'color': colors["lightblue"]},
+    'bgcolor': colors["lightblack"],
+    'bordercolor': colors["lightblack"]
+    },
     ))
+    fig2.update_layout(paper_bgcolor = colors["lightblack"], font = {'color': colors["white"]})
+    fig3.update_layout(paper_bgcolor = colors["lightblack"], font = {'color': colors["white"]})
     return [fig1, fig2, fig3 ]
 
 
