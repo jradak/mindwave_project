@@ -15,7 +15,6 @@ import plotly.express as px
 import plotly.graph_objs as go
 import numpy as np
 import time
-import os
 
 app = Dash(__name__)
 
@@ -40,42 +39,58 @@ colors = {
 app.layout = html.Div(style={'backgroundColor': colors['black']}, children=[
     html.Div(className='block', children=[
         html.Div([
-            dcc.Graph(id='live-update-graph', animate=True),
-            dcc.Interval(id='interval-component', interval=1*1000, n_intervals=0)
+            dcc.Graph(id='live-update-graph', animate=True)
         ])
     ]),
     html.Div(className='block', children=[
-        daq.Gauge(
-            value=5,
-            label='Pažnja',
-            max=100,
-            min=0,
-        ),
-        daq.Gauge(
-            value=5,
-            label='Meditacija',
-            max=100,
-            min=0,
-        )
-    ])
+       dcc.Graph(id='live-update-attention', animate=True),
+       dcc.Graph(id='live-update-meditation', animate=True)
+    ]),
+    dcc.Interval(id='interval-component', interval=1*1000, n_intervals=0)
 ])
 
-@app.callback(Output('live-update-graph', 'figure'),
+@app.callback([Output('live-update-graph', 'figure'), 
+Output('live-update-attention', 'figure'), 
+Output('live-update-meditation', 'figure')],
               Input('interval-component', 'n_intervals'))
-
 def get_live_updates(n):
     df = pd.read_csv('data.csv')
     mode = 'lines'
-    fig = px.scatter()
-    fig.add_scatter(name='Delta', y=df['delta'], mode=mode)
-    fig.add_scatter(name='Theta', y=df['theta'], mode=mode)
-    fig.add_scatter(name='LowAlpha', y=df['lowalpha'], mode=mode)
-    fig.add_scatter(name='HighAlpha', y=df['highalpha'], mode=mode)
-    fig.add_scatter(name='LowBeta', y=df['lowbeta'], mode=mode)
-    fig.add_scatter(name='HighBeta', y=df['highbeta'], mode=mode)
-    fig.add_scatter(name='LowGamma', y=df['lowgamma'], mode=mode)
-    fig.add_scatter(name='HighGamma', y=df['highgamma'], mode=mode)
-    return fig
+    fig1 = px.scatter()
+    fig1.add_scatter(name='Delta', y=df['delta'], mode=mode)
+    fig1.add_scatter(name='Theta', y=df['theta'], mode=mode)
+    fig1.add_scatter(name='LowAlpha', y=df['lowalpha'], mode=mode)
+    fig1.add_scatter(name='HighAlpha', y=df['highalpha'], mode=mode)
+    fig1.add_scatter(name='LowBeta', y=df['lowbeta'], mode=mode)
+    fig1.add_scatter(name='HighBeta', y=df['highbeta'], mode=mode)
+    fig1.add_scatter(name='LowGamma', y=df['lowgamma'], mode=mode)
+    fig1.add_scatter(name='HighGamma', y=df['highgamma'], mode=mode)
+
+    row = len(df)-1
+    specdata1=df.iloc[row, 0]
+    specdata2=df.iloc[row, 1]
+    # fig2= px.scatter()
+    # fig2.add_scatter(name='Attention', y=df['attention'], mode=mode)
+    # fig3= px.scatter()
+    # fig3.add_scatter(name='Meditation', y=df['meditation'], mode=mode)
+    # fig2= px.pie(values=[specdata1, 100-specdata1], hole=.3, title='Pažnja')
+    # fig3= px.pie(values=[specdata2, 100-specdata2], hole=.3, title='Meditacija')
+    fig2= go.Figure(go.Indicator(
+    mode = "gauge+number",
+    value = specdata1,
+    domain = {'x': [0, 1], 'y': [0, 1]},
+    title = {'text': "Pažnja"},
+    gauge = {'axis': {'range': [None, 100]}},
+    ))
+    fig3 = go.Figure(go.Indicator(
+    mode = "gauge+number",
+    value = specdata2,
+    domain = {'x': [0, 1], 'y': [0, 1]},
+    title = {'text': "Meditacija"},
+    gauge = {'axis': {'range': [None, 100]}},
+    ))
+    return [fig1, fig2, fig3 ]
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
