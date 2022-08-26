@@ -1,5 +1,6 @@
+#https://store.neurosky.com/products/pc-developer-tools -> install ->ThinkGear Connector
 #https://pypi.org/project/PyNeuro/
-#pip install PyNeuro -> terminal
+#py -m pip install PyNeuro -> terminal
 #python 3.7.9
 from PyNeuro.PyNeuro import PyNeuro
 from time import sleep
