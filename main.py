@@ -6,16 +6,16 @@
 # visit http://127.0.0.1:8050/ in web browser
 
 from dash import Dash, dcc, html
-from dash.dependencies import Input, Output
-import dash_daq as daq
+from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
-from collections import deque
 import pandas as pd
 import plotly
 import plotly.express as px
 import plotly.graph_objs as go
 import numpy as np
 import time
+import csv
+import datetime
 
 app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -40,17 +40,57 @@ colors = {
 
 app.layout = dbc.Container(children=[
     dbc.Row([
-        dbc.Col(),
         dbc.Col([
-            dbc.Row(dbc.Card(dbc.CardBody(dcc.Graph(id='live-update-graph', animate=True)),color=colors['lightblack'], style={'marginTop': 10, 'marginBottom': 10})),
-                dbc.Row([
-                    dbc.Col(dbc.Card(dbc.CardBody(dcc.Graph(id='live-update-attention', animate=True)), color=colors['lightblack'])),
-                    dbc.Col(dbc.Card(dbc.CardBody(dcc.Graph(id='live-update-meditation', animate=True)),  color=colors['lightblack']))
-            ])
-        ])
+            dbc.Card(dbc.CardBody(dcc.Upload(
+                id='upload-image',
+                children=html.Div([
+                    'Drag and Drop or ',
+                    html.A('Select Files')
+                ]),
+                style={
+                    'width': '100%',
+                    'height': '60px',
+                    'lineHeight': '60px',
+                    'borderWidth': '1px',
+                    'borderStyle': 'dashed',
+                    'borderRadius': '5px',
+                    'textAlign': 'center',
+                    'margin': '10px',
+                    'color': colors['white']
+                },
+                # Allow multiple files to be uploaded
+                multiple=True
+                )), color=colors['lightblack'], style={'marginTop': 10, 'marginBottom': 10}),
+                html.Div(id='output-image-upload'),
+        ]),
+        dbc.Col(
+            dbc.Card(dbc.CardBody(dcc.Graph(id='live-update-graph', animate=True)),color=colors['lightblack'], style={'marginTop': 10, 'marginBottom': 10})
+        ),
     ]),
-    dcc.Interval(id='interval-component', interval=1*1000, n_intervals=0)
-], style={'backgroundColor': colors['black'], "height":"100vh", "margin-right":0})
+    dbc.Row([
+        dbc.Col(),
+        dbc.Col(),
+        dbc.Col(dbc.Card(dbc.CardBody(dcc.Graph(id='live-update-attention', animate=True)), color=colors['lightblack'])),
+        dbc.Col(dbc.Card(dbc.CardBody(dcc.Graph(id='live-update-meditation', animate=True)), color=colors['lightblack']))
+    ]),    
+    dcc.Interval(id='interval-component', interval=1*1000, n_intervals=0),
+], style={'backgroundColor': colors['black']})
+
+def parse_contents(contents, filename, date):
+    return html.Div([
+        html.H5(filename),
+        html.H6(datetime.datetime.fromtimestamp(date)),
+
+        # HTML images accept base64 encoded strings in the same format
+        # that is supplied by the upload
+        html.Img(src=contents),
+        html.Hr(),
+        html.Div('Raw Content'),
+        html.Pre(contents[0:200] + '...', style={
+            'whiteSpace': 'pre-wrap',
+            'wordBreak': 'break-all'
+        })
+    ])
 
 @app.callback([Output('live-update-graph', 'figure'), 
 Output('live-update-attention', 'figure'), 
@@ -103,6 +143,16 @@ def get_live_updates(n):
     fig3.update_layout({"height": 280,"autosize":False}, paper_bgcolor = colors["lightblack"], font = {'color': colors["white"]})
     return [fig1, fig2, fig3 ]
 
+@app.callback(Output('output-image-upload', 'children'),
+              Input('upload-image', 'contents'),
+              State('upload-image', 'filename'),
+              State('upload-image', 'last_modified'))
+def update_output(list_of_contents, list_of_names, list_of_dates):
+    if list_of_contents is not None:
+        children = [
+            parse_contents(c, n, d) for c, n, d in
+            zip(list_of_contents, list_of_names, list_of_dates)]
+        return children
 
 if __name__ == '__main__':
     app.run_server(debug=True)
