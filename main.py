@@ -5,10 +5,10 @@
 # Run `py app.py` in vscode
 # visit http://127.0.0.1:8050/ in web browser
 
-from turtle import width
 from dash import Dash, dcc, html
 from dash.dependencies import Input, Output
 import dash_daq as daq
+import dash_bootstrap_components as dbc
 from collections import deque
 import pandas as pd
 import plotly
@@ -17,7 +17,7 @@ import plotly.graph_objs as go
 import numpy as np
 import time
 
-app = Dash(__name__)
+app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 colors = {
     'black':'#000000',
@@ -38,18 +38,19 @@ colors = {
     'darkgreyblue': '#232734'
 }
 
-app.layout = html.Div(style={'backgroundColor': colors['black']}, children=[
-    html.Div(style={'backgroundColor': colors['lightblack'], 'marginLeft':'auto','marginRight':'25', 'width':'50%'}, className='block', children=[
-        html.Div([
-            dcc.Graph(id='live-update-graph', animate=True, style={'width': '100%',})
+app.layout = dbc.Container(children=[
+    dbc.Row([
+        dbc.Col(),
+        dbc.Col([
+            dbc.Row(dbc.Card(dbc.CardBody(dcc.Graph(id='live-update-graph', animate=True)),color=colors['lightblack'], style={'marginTop': 10, 'marginBottom': 10})),
+                dbc.Row([
+                    dbc.Col(dbc.Card(dbc.CardBody(dcc.Graph(id='live-update-attention', animate=True)), color=colors['lightblack'])),
+                    dbc.Col(dbc.Card(dbc.CardBody(dcc.Graph(id='live-update-meditation', animate=True)),  color=colors['lightblack']))
+            ])
         ])
     ]),
-    html.Div(style={'backgroundColor': colors['lightblack'],'marginLeft':'auto','marginRight':'25', 'width':'50%'}, className='block', children=[
-       dcc.Graph(id='live-update-attention', animate=True, style={'width': '50%', 'display': 'inline-block'}),
-       dcc.Graph(id='live-update-meditation', animate=True, style={'width': '50%', 'display': 'inline-block'})
-    ]),
     dcc.Interval(id='interval-component', interval=1*1000, n_intervals=0)
-])
+], style={'backgroundColor': colors['black'], "height":"100vh", "margin-right":0})
 
 @app.callback([Output('live-update-graph', 'figure'), 
 Output('live-update-attention', 'figure'), 
@@ -67,9 +68,11 @@ def get_live_updates(n):
     fig1.add_scatter(name='HighBeta', y=df['highbeta'], mode=mode)
     fig1.add_scatter(name='LowGamma', y=df['lowgamma'], mode=mode)
     fig1.add_scatter(name='HighGamma', y=df['highgamma'], mode=mode)
-    fig1.update_layout(paper_bgcolor = colors["lightblack"], plot_bgcolor=colors["lightblack"], font = {'color': colors["white"]})
+    fig1.update_xaxes(range = [0,len(df)-1])
+    fig1.update_layout({"margin": {"l": 0, "r": 0, "b": 0, "t": 20}, "autosize": True}, paper_bgcolor = colors["lightblack"], plot_bgcolor=colors["lightblack"], font = {'color': colors["white"]})
     fig1.update_xaxes(showline=True, linewidth=1, linecolor=colors['darkgreyblue'], gridcolor=colors['darkgreyblue'])
     fig1.update_yaxes(showline=True, linewidth=1, linecolor=colors['darkgreyblue'], gridcolor=colors['darkgreyblue'])
+    
     row = len(df)-1
     specdata1=df.iloc[row, 0]
     specdata2=df.iloc[row, 1]
@@ -96,8 +99,8 @@ def get_live_updates(n):
     'bordercolor': colors["lightblack"]
     },
     ))
-    fig2.update_layout(paper_bgcolor = colors["lightblack"], font = {'color': colors["white"]})
-    fig3.update_layout(paper_bgcolor = colors["lightblack"], font = {'color': colors["white"]})
+    fig2.update_layout({"height": 280,"autosize":False}, paper_bgcolor = colors["lightblack"], font = {'color': colors["white"]})
+    fig3.update_layout({"height": 280,"autosize":False}, paper_bgcolor = colors["lightblack"], font = {'color': colors["white"]})
     return [fig1, fig2, fig3 ]
 
 

@@ -75,23 +75,22 @@ with open('data.csv', 'w') as csv_file:
     csv_writer.writeheader()
 
 while True:
-    if(pn.attention>0):
-        with open('data.csv', 'a') as csv_file:
-            csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+    with open('data.csv', 'a') as csv_file:
+        csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
 
-            info = {
-                "attention": pn.attention,
-                "meditation": pn.meditation,
-                "delta": pn.delta, 
-                "theta": pn.theta, 
-                "lowalpha": pn.lowAlpha, 
-                "highalpha": pn.highAlpha, 
-                "lowbeta": pn.lowBeta, 
-                "highbeta": pn.highBeta, 
-                "lowgamma": pn.lowGamma, 
-                "highgamma": pn.highGamma
-            }
+        info = {
+            "attention": pn.attention,
+            "meditation": pn.meditation,
+            "delta": pn.delta, 
+            "theta": pn.theta, 
+            "lowalpha": pn.lowAlpha, 
+            "highalpha": pn.highAlpha, 
+            "lowbeta": pn.lowBeta, 
+            "highbeta": pn.highBeta, 
+            "lowgamma": pn.lowGamma, 
+            "highgamma": pn.highGamma
+        }
 
-            csv_writer.writerow(info)
-            print(pn.attention, pn.meditation, pn.delta, pn.theta, pn.lowAlpha, pn.highAlpha, pn.lowBeta, pn.highBeta, pn.lowGamma, pn.highGamma)
-        sleep(1)
+        csv_writer.writerow(info)
+        print(pn.attention, pn.meditation, pn.delta, pn.theta, pn.lowAlpha, pn.highAlpha, pn.lowBeta, pn.highBeta, pn.lowGamma, pn.highGamma)
+    sleep(1)
