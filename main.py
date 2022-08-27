@@ -17,11 +17,12 @@ import time
 import csv
 import datetime
 
-app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP])
 
 colors = {
     'black':'#000000',
     'lightblack': '#1B1B1B',
+    'shadow':'#333333',
     'red': '#da2c43',
     'mintgreen': '#98ff98',
     'green': '#007f5c',
@@ -58,18 +59,61 @@ app.layout = dbc.Container(children=[
                     'margin': '10px',
                     'color': colors['white']
                 },
-                # Allow multiple files to be uploaded
                 multiple=True
                 )), color=colors['lightblack'], style={'marginTop': 10, 'marginBottom': 10}),
-                html.Div(id='output-image-upload'),
+                html.Div(id='output-image-upload', style={"textAlign":'center'}),
         ]),
         dbc.Col(
             dbc.Card(dbc.CardBody(dcc.Graph(id='live-update-graph', animate=True)),color=colors['lightblack'], style={'marginTop': 10, 'marginBottom': 10})
         ),
     ]),
     dbc.Row([
-        dbc.Col(),
-        dbc.Col(),
+        dbc.Col(
+            dbc.Card(dbc.CardBody([
+                html.Div(
+                    html.I(className="bi bi-emoji-laughing-fill"),
+                    style={"color": colors["shadow"], "fontSize": 62,}
+                ),
+                html.Div(
+                    html.I(className="bi bi-emoji-neutral-fill"),
+                    style={"color": colors["lightblue"], "fontSize": 62}
+                ),
+                html.Div(
+                    html.I(className="bi bi-emoji-frown-fill"),
+                    style={"color": colors["shadow"], "fontSize": 62,}
+                )
+        ],), color=colors['lightblack'], style={"textAlign": "center"})
+        ),
+        dbc.Col([
+            dbc.Card(dbc.CardBody([dbc.RadioItems(
+                options=[
+                    {"label": "Pozitivno", "value": 1},
+                    {"label": "Neutralno", "value": 2},
+                    {"label": "Negativno", "value": 3},
+                ],
+                value=2,
+                label_style={"color": colors['white'], 'fontSize': 20},
+                input_style={
+                    "backgroundColor": colors['black'],
+                    "borderColor": colors['black'],
+                },
+                label_checked_style={"color": colors['lightblue']},
+                input_checked_style={
+                    "backgroundColor": colors['lightblue'],
+                    "borderColor": colors['lightblack'],
+                },
+                style={"marginTop": 40, "marginBottom": 40}
+            ),
+            dbc.ButtonGroup([
+                    dbc.Button(html.I(className="bi bi-arrow-left"),color="light", style={"backgroundColor": colors["lightblue"], "color": colors["lightblack"], "border":"none"}), 
+                    dbc.Button(html.I(className="bi bi-play"), color="light",style={"backgroundColor": colors["lightblue"], "color": colors["lightblack"], "border":"none"}), 
+                    dbc.Button(html.I(className="bi bi-download"),color="light", style={"backgroundColor": colors["lightblue"], "color": colors["lightblack"], "border":"none"}), 
+                    dbc.Button(html.I(className="bi bi-arrow-right"),color="light", style={"backgroundColor": colors["lightblue"], "color": colors["lightblack"], "border":"none"})],
+                size="lg",style={"marginTop": 40, "marginBottom": 20}
+            )
+            ]),
+            color=colors['lightblack'], style={"textAlign":"center"})
+        ]),
         dbc.Col(dbc.Card(dbc.CardBody(dcc.Graph(id='live-update-attention', animate=True)), color=colors['lightblack'])),
         dbc.Col(dbc.Card(dbc.CardBody(dcc.Graph(id='live-update-meditation', animate=True)), color=colors['lightblack']))
     ]),    
@@ -78,18 +122,16 @@ app.layout = dbc.Container(children=[
 
 def parse_contents(contents, filename, date):
     return html.Div([
-        html.H5(filename),
-        html.H6(datetime.datetime.fromtimestamp(date)),
+        # html.H5(filename),
+        # html.H6(datetime.datetime.fromtimestamp(date)),
 
-        # HTML images accept base64 encoded strings in the same format
-        # that is supplied by the upload
-        html.Img(src=contents),
-        html.Hr(),
-        html.Div('Raw Content'),
-        html.Pre(contents[0:200] + '...', style={
-            'whiteSpace': 'pre-wrap',
-            'wordBreak': 'break-all'
-        })
+        html.Img(src=contents, style={'height':'60%', 'width':'60%'}),
+        # html.Hr(),
+        # html.Div('Raw Content'),
+        # html.Pre(contents[0:200] + '...', style={
+        #     'whiteSpace': 'pre-wrap',
+        #     'wordBreak': 'break-all'
+        # })
     ])
 
 @app.callback([Output('live-update-graph', 'figure'), 
