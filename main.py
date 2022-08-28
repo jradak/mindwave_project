@@ -15,7 +15,7 @@ import plotly.graph_objs as go
 import numpy as np
 import time
 import csv
-import datetime
+import threading
 
 app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP])
 
@@ -66,6 +66,7 @@ app.layout = dbc.Container(children=[
         dbc.Col(
             dbc.Card(dbc.CardBody(dcc.Graph(id='live-update-graph', animate=True)),color=colors['lightblack'], style={'marginTop': 10, 'marginBottom': 10})
         ),
+        dcc.Interval(id='interval-component', interval=1*1000, n_intervals=0)
     ]),
     dbc.Row([
         dbc.Col(
@@ -85,54 +86,58 @@ app.layout = dbc.Container(children=[
         ],), color=colors['lightblack'], style={"textAlign": "center"})
         ),
         dbc.Col([
-            dbc.Card(dbc.CardBody([dbc.RadioItems(
-                options=[
-                    {"label": "Pozitivno", "value": 1},
-                    {"label": "Neutralno", "value": 2},
-                    {"label": "Negativno", "value": 3},
-                ],
-                value=2,
-                label_style={"color": colors['white'], 'fontSize': 20},
-                input_style={
-                    "backgroundColor": colors['black'],
-                    "borderColor": colors['black'],
-                },
-                label_checked_style={"color": colors['lightblue']},
-                input_checked_style={
-                    "backgroundColor": colors['lightblue'],
-                    "borderColor": colors['lightblack'],
-                },
-                style={"marginTop": 40, "marginBottom": 40}
-            ),
-            dbc.ButtonGroup([
-                    dbc.Button(html.I(className="bi bi-arrow-left"),color="light", style={"backgroundColor": colors["lightblue"], "color": colors["lightblack"], "border":"none"}), 
-                    dbc.Button(html.I(className="bi bi-play"), color="light",style={"backgroundColor": colors["lightblue"], "color": colors["lightblack"], "border":"none"}), 
-                    dbc.Button(html.I(className="bi bi-download"),color="light", style={"backgroundColor": colors["lightblue"], "color": colors["lightblack"], "border":"none"}), 
-                    dbc.Button(html.I(className="bi bi-arrow-right"),color="light", style={"backgroundColor": colors["lightblue"], "color": colors["lightblack"], "border":"none"})],
-                size="lg",style={"marginTop": 40, "marginBottom": 20}
-            )
+            dbc.Card(dbc.CardBody([
+                dbc.RadioItems(
+                    options=[
+                        {"label": "Pozitivno", "value": 'pozitivno'},
+                        {"label": "Neutralno", "value": 'neutralno'},
+                        {"label": "Negativno", "value": 'negativno'},
+                    ],
+                    value='neutralno',
+                    label_style={"color": colors['white'], 'fontSize': 20},
+                    input_style={
+                        "backgroundColor": colors['black'],
+                        "borderColor": colors['black'],
+                    },
+                    label_checked_style={"color": colors['lightblue']},
+                    input_checked_style={
+                        "backgroundColor": colors['lightblue'],
+                        "borderColor": colors['lightblack'],
+                    },
+                    style={"marginTop": 40, "marginBottom": 40},
+                    id="radioitems-input"
+                ),
+                html.Div(id='output-csv'),
+                dcc.Interval(id='interval-component2', interval=1*1000, n_intervals=0, disabled=True, max_intervals=15),
+                dbc.ButtonGroup([
+                    dbc.Button(html.I(className="bi bi-play"), id="btn-play", n_clicks=0, color="light",style={"backgroundColor": colors["lightblue"], "color": colors["lightblack"], "border":"none"}), 
+                    dbc.Button(html.I(className="bi bi-download"), id="btn-download", n_clicks=0, color="light", style={"backgroundColor": colors["lightblue"], "color": colors["lightblack"], "border":"none"}), 
+                    dbc.Button(html.I(className="bi bi-arrow-right"), id="btn-forward", n_clicks=0, color="light", style={"backgroundColor": colors["lightblue"], "color": colors["lightblack"], "border":"none"})
+                ], size="lg",style={"marginTop": 10, "marginBottom": 10}),
+                html.Div(id='download-csv', style={"marginTop": 10, "marginBottom": 10}),
             ]),
             color=colors['lightblack'], style={"textAlign":"center"})
         ]),
         dbc.Col(dbc.Card(dbc.CardBody(dcc.Graph(id='live-update-attention', animate=True)), color=colors['lightblack'])),
         dbc.Col(dbc.Card(dbc.CardBody(dcc.Graph(id='live-update-meditation', animate=True)), color=colors['lightblack']))
-    ]),    
-    dcc.Interval(id='interval-component', interval=1*1000, n_intervals=0),
+    ]),
 ], style={'backgroundColor': colors['black']})
 
 def parse_contents(contents, filename, date):
     return html.Div([
-        # html.H5(filename),
-        # html.H6(datetime.datetime.fromtimestamp(date)),
-
         html.Img(src=contents, style={'height':'60%', 'width':'60%'}),
-        # html.Hr(),
-        # html.Div('Raw Content'),
-        # html.Pre(contents[0:200] + '...', style={
-        #     'whiteSpace': 'pre-wrap',
-        #     'wordBreak': 'break-all'
-        # })
     ])
+
+def write_csv(name):
+    fieldnames = ["attention", "meditation", "delta", "theta", "lowalpha", "highalpha", "lowbeta", "highbeta", "lowgamma", "highgamma" ]
+    with open(name, 'w') as csv_file:
+        csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        csv_writer.writeheader()
+
+write_csv('pozitivno.csv')
+write_csv('neutralno.csv')
+write_csv('negativno.csv')
+
 
 @app.callback([Output('live-update-graph', 'figure'), 
 Output('live-update-attention', 'figure'), 
@@ -186,15 +191,78 @@ def get_live_updates(n):
     return [fig1, fig2, fig3 ]
 
 @app.callback(Output('output-image-upload', 'children'),
+              Input("btn-forward", "n_clicks"),
               Input('upload-image', 'contents'),
               State('upload-image', 'filename'),
               State('upload-image', 'last_modified'))
-def update_output(list_of_contents, list_of_names, list_of_dates):
+def update_output(n, list_of_contents, list_of_names, list_of_dates):
     if list_of_contents is not None:
         children = [
             parse_contents(c, n, d) for c, n, d in
             zip(list_of_contents, list_of_names, list_of_dates)]
-        return children
+        if n is None:
+            return children[0]
+        else:
+            if len(list_of_contents)-1 < n:
+                n=0
+            return children[n]
+new_data=[]
+@app.callback([Output('interval-component2', 'n_intervals'), Output('interval-component2', 'disabled')],
+                Input('btn-play','n_clicks'))
+def start_count(n_play):
+    if n_play is None:
+        return
+    elif n_play!=0 and n_play!=None and n_play%2!=0:
+        return 0, False
+    else:
+        new_data.clear()
+        return 0, True
+    
+@app.callback(Output('output-csv','children'), Input('interval-component2', 'n_intervals'))
+def updateCsv(n_intervals):
+        input_csv=pd.read_csv('data.csv')
+        sub_array=[]
+        row = len(input_csv)-1
+        spec_dat=input_csv.iloc[row]
+        sub_array.append(spec_dat["attention"])
+        sub_array.append(spec_dat["meditation"])
+        sub_array.append(spec_dat["delta"])
+        sub_array.append(spec_dat["theta"])
+        sub_array.append(spec_dat["lowalpha"])
+        sub_array.append(spec_dat["highalpha"])
+        sub_array.append(spec_dat["lowbeta"])
+        sub_array.append(spec_dat["highbeta"])
+        sub_array.append(spec_dat["lowgamma"])
+        sub_array.append(spec_dat["highgamma"])
+        new_data.append(sub_array)
+        return  html.Div("Broj zapisa: {}".format(n_intervals), style={'color': colors['white'], 'fontSize':20})
+
+@app.callback(Output('download-csv', 'children'),
+            [Input('btn-download','n_clicks'), Input('radioitems-input', 'value')])
+def save_csv(n_download, value):
+    if n_download is None:
+        return
+    if n_download>0 and n_download is not None:
+        fieldnames = ["attention", "meditation", "delta", "theta", "lowalpha", "highalpha", "lowbeta", "highbeta", "lowgamma", "highgamma" ]
+        with open('{}.csv'.format(value), 'a') as csv_file:
+            csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+            print(new_data)
+            for row in range(len(new_data)):
+                info={
+                    "attention": new_data[row][0],
+                    "meditation": new_data[row][1],
+                    "delta": new_data[row][2], 
+                    "theta": new_data[row][3], 
+                    "lowalpha": new_data[row][4], 
+                    "highalpha": new_data[row][5], 
+                    "lowbeta": new_data[row][6], 
+                    "highbeta": new_data[row][7], 
+                    "lowgamma": new_data[row][8], 
+                    "highgamma": new_data[row][9]
+                }
+                csv_writer.writerow(info)
+            new_data.clear()            
+      
 
 if __name__ == '__main__':
     app.run_server(debug=True)
