@@ -8,7 +8,6 @@ from time import sleep
 import csv 
 
 pn = PyNeuro()
-
 # def attention_callback(attention_value):
 #     """this function will be called everytime NeuroPy has a new value for attention"""
 #     print ("Value of attention is: ", attention_value)
@@ -64,33 +63,35 @@ pn = PyNeuro()
 # pn.set_highBeta_callback(highbeta_callback)
 # pn.set_lowGamma_callback(lowgamma_callback)
 # pn.set_highGamma_callback(highgamma_callback)
+def stop():
+    pn.disconnect()
+    pn.close()
 
-pn.connect()
-pn.start()
+def start():
+    pn.connect()
+    pn.start()
 
-fieldnames = ["attention", "meditation", "delta", "theta", "lowalpha", "highalpha", "lowbeta", "highbeta", "lowgamma", "highgamma" ]
-
-with open('data.csv', 'w') as csv_file:
-    csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-    csv_writer.writeheader()
-
-while True:
-    with open('data.csv', 'a') as csv_file:
+    fieldnames = ["attention", "meditation", "delta", "theta", "lowalpha", "highalpha", "lowbeta", "highbeta", "lowgamma", "highgamma", "status" ]
+    global state
+    with open('data.csv', 'w') as csv_file:
         csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-
-        info = {
-            "attention": pn.attention,
-            "meditation": pn.meditation,
-            "delta": pn.delta, 
-            "theta": pn.theta, 
-            "lowalpha": pn.lowAlpha, 
-            "highalpha": pn.highAlpha, 
-            "lowbeta": pn.lowBeta, 
-            "highbeta": pn.highBeta, 
-            "lowgamma": pn.lowGamma, 
-            "highgamma": pn.highGamma
-        }
-
-        csv_writer.writerow(info)
-        print(pn.attention, pn.meditation, pn.delta, pn.theta, pn.lowAlpha, pn.highAlpha, pn.lowBeta, pn.highBeta, pn.lowGamma, pn.highGamma)
-    sleep(1)
+        csv_writer.writeheader()
+    while True:
+        with open('data.csv', 'a') as csv_file:
+            csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+            info = {
+                "attention": pn.attention,
+                "meditation": pn.meditation,
+                "delta": pn.delta, 
+                "theta": pn.theta, 
+                "lowalpha": pn.lowAlpha, 
+                "highalpha": pn.highAlpha, 
+                "lowbeta": pn.lowBeta, 
+                "highbeta": pn.highBeta, 
+                "lowgamma": pn.lowGamma, 
+                "highgamma": pn.highGamma,
+                "status":pn.status
+            }
+            csv_writer.writerow(info)
+            print(pn.attention, pn.meditation, pn.delta, pn.theta, pn.lowAlpha, pn.highAlpha, pn.lowBeta, pn.highBeta, pn.lowGamma, pn.highGamma)
+        sleep(1)

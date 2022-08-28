@@ -13,10 +13,9 @@ import plotly
 import plotly.express as px
 import plotly.graph_objs as go
 import numpy as np
-import time
 import csv
-import threading
-
+import reader
+import sys
 app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP])
 
 colors = {
@@ -73,15 +72,18 @@ app.layout = dbc.Container(children=[
             dbc.Card(dbc.CardBody([
                 html.Div(
                     html.I(className="bi bi-emoji-laughing-fill"),
-                    style={"color": colors["shadow"], "fontSize": 62,}
+                    style={"color": colors["shadow"], "fontSize": 62,},
+                    id='happy'
                 ),
                 html.Div(
                     html.I(className="bi bi-emoji-neutral-fill"),
-                    style={"color": colors["lightblue"], "fontSize": 62}
+                    style={"color": colors["lightblue"], "fontSize": 62},
+                    id='neutral'
                 ),
                 html.Div(
                     html.I(className="bi bi-emoji-frown-fill"),
-                    style={"color": colors["shadow"], "fontSize": 62,}
+                    style={"color": colors["shadow"], "fontSize": 62,},
+                    id='sad'
                 )
         ],), color=colors['lightblack'], style={"textAlign": "center"})
         ),
@@ -107,13 +109,13 @@ app.layout = dbc.Container(children=[
                     style={"marginTop": 40, "marginBottom": 40},
                     id="radioitems-input"
                 ),
-                html.Div(id='output-csv'),
                 dcc.Interval(id='interval-component2', interval=1*1000, n_intervals=0, disabled=True, max_intervals=15),
                 dbc.ButtonGroup([
                     dbc.Button(html.I(className="bi bi-play"), id="btn-play", n_clicks=0, color="light",style={"backgroundColor": colors["lightblue"], "color": colors["lightblack"], "border":"none"}), 
                     dbc.Button(html.I(className="bi bi-download"), id="btn-download", n_clicks=0, color="light", style={"backgroundColor": colors["lightblue"], "color": colors["lightblack"], "border":"none"}), 
                     dbc.Button(html.I(className="bi bi-arrow-right"), id="btn-forward", n_clicks=0, color="light", style={"backgroundColor": colors["lightblue"], "color": colors["lightblack"], "border":"none"})
                 ], size="lg",style={"marginTop": 10, "marginBottom": 10}),
+                html.Div(id='output-csv'),
                 html.Div(id='download-csv', style={"marginTop": 10, "marginBottom": 10}),
             ]),
             color=colors['lightblack'], style={"textAlign":"center"})
@@ -121,6 +123,24 @@ app.layout = dbc.Container(children=[
         dbc.Col(dbc.Card(dbc.CardBody(dcc.Graph(id='live-update-attention', animate=True)), color=colors['lightblack'])),
         dbc.Col(dbc.Card(dbc.CardBody(dcc.Graph(id='live-update-meditation', animate=True)), color=colors['lightblack']))
     ]),
+    dbc.Row([
+        dbc.Col([
+            dbc.Button(html.I(className='bi bi-eye'),id="btn-model", n_clicks=0,color="dark",style={"backgroundColor": colors["lightblack"], "color": colors["lightblue"], "border":"none", 'fontSize':20}),
+            dbc.Button(html.I(className='bi bi-headset'),id="btn-connect", n_clicks=0,color="dark",style={"backgroundColor": colors["lightblack"], "color": colors["lightblue"], "border":"none", 'fontSize':20}),
+            html.A(dbc.Button(html.I(className='bi bi-arrow-clockwise'),id="btn-refresh-page", n_clicks=0,color="dark",style={"backgroundColor": colors["lightblack"], "color": colors["lightblue"], "border":"none", 'fontSize':20}), href='/' ),
+            dbc.Modal(
+                [
+                    dbc.ModalBody(dcc.Graph(id="knn-graph"), style={"backgroundColor": colors["lightblack"], "color":colors["white"],"border":'none'}),
+                    dbc.ModalFooter(
+                        dbc.Button(
+                            "Zatvori", id="close", className="ms-auto", n_clicks=0, color="dark",style={"backgroundColor": colors["lightblack"], "color": colors["lightblue"], "border":"none", 'fontSize':20}
+                        ), style={"backgroundColor": colors["lightblack"], "color":colors["white"],"border":'none'}
+                    ),
+                ],id="modal",is_open=False
+            ),
+            html.Div(id="connect-output")
+        ], style={"textAlign":"right"})
+    ], style={'marginTop':10} )
 ], style={'backgroundColor': colors['black']})
 
 def parse_contents(contents, filename, date):
@@ -137,7 +157,6 @@ def write_csv(name):
 write_csv('pozitivno.csv')
 write_csv('neutralno.csv')
 write_csv('negativno.csv')
-
 
 @app.callback([Output('live-update-graph', 'figure'), 
 Output('live-update-attention', 'figure'), 
@@ -206,6 +225,7 @@ def update_output(n, list_of_contents, list_of_names, list_of_dates):
             if len(list_of_contents)-1 < n:
                 n=0
             return children[n]
+
 new_data=[]
 @app.callback([Output('interval-component2', 'n_intervals'), Output('interval-component2', 'disabled')],
                 Input('btn-play','n_clicks'))
@@ -246,7 +266,6 @@ def save_csv(n_download, value):
         fieldnames = ["attention", "meditation", "delta", "theta", "lowalpha", "highalpha", "lowbeta", "highbeta", "lowgamma", "highgamma" ]
         with open('{}.csv'.format(value), 'a') as csv_file:
             csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-            print(new_data)
             for row in range(len(new_data)):
                 info={
                     "attention": new_data[row][0],
@@ -262,7 +281,28 @@ def save_csv(n_download, value):
                 }
                 csv_writer.writerow(info)
             new_data.clear()            
-      
+
+@app.callback(
+    Output("modal", "is_open"),
+    [Input("btn-model", "n_clicks"), Input("close", "n_clicks")],
+    [State("modal", "is_open")],
+)
+def toggle_modal(n1, n2, is_open):
+    if n1 or n2:
+        return not is_open
+    return is_open
+
+@app.callback(Output("connect-output", "children"), Input("btn-connect", "n_clicks"))
+def connect(n):
+    if n is None or n == 0:
+        return
+    elif n!=0 and n is not None:
+        if n%2!=0:
+            reader.start()
+        if n%2!=1:
+            sys.exit()
+    else:
+        return
 
 if __name__ == '__main__':
     app.run_server(debug=True)
