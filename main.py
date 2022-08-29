@@ -16,6 +16,15 @@ import numpy as np
 import csv
 import reader
 import sys
+import os
+
+def restart():
+    print("argv was",sys.argv)
+    print("sys.executable was", sys.executable)
+    print("restart now")
+
+    os.execv(sys.executable, ['python'] + sys.argv)
+
 app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP])
 
 colors = {
@@ -127,6 +136,7 @@ app.layout = dbc.Container(children=[
         dbc.Col([
             dbc.Button(html.I(className='bi bi-eye'),id="btn-model", n_clicks=0,color="dark",style={"backgroundColor": colors["lightblack"], "color": colors["lightblue"], "border":"none", 'fontSize':20}),
             dbc.Button(html.I(className='bi bi-headset'),id="btn-connect", n_clicks=0,color="dark",style={"backgroundColor": colors["lightblack"], "color": colors["lightblue"], "border":"none", 'fontSize':20}),
+            dbc.Button(html.I(className='bi bi-slash-square'),id="btn-disconnect", n_clicks=0,color="dark",style={"backgroundColor": colors["lightblack"], "color": colors["lightblue"], "border":"none", 'fontSize':20}),
             html.A(dbc.Button(html.I(className='bi bi-arrow-clockwise'),id="btn-refresh-page", n_clicks=0,color="dark",style={"backgroundColor": colors["lightblack"], "color": colors["lightblue"], "border":"none", 'fontSize':20}), href='/' ),
             dbc.Modal(
                 [
@@ -138,7 +148,8 @@ app.layout = dbc.Container(children=[
                     ),
                 ],id="modal",is_open=False
             ),
-            html.Div(id="connect-output")
+            html.Div(id="connect-output"),
+            html.Div(id="disconnect-output")
         ], style={"textAlign":"right"})
     ], style={'marginTop':10} )
 ], style={'backgroundColor': colors['black']})
@@ -297,12 +308,16 @@ def connect(n):
     if n is None or n == 0:
         return
     elif n!=0 and n is not None:
-        if n%2!=0:
-            reader.start()
-        if n%2!=1:
-            sys.exit()
+        reader.start()
     else:
         return
 
+@app.callback(Output("disconnect-output", "children"), Input("btn-disconnect", "n_clicks"))
+def disconnect(n):
+    if n is None or n == 0:
+        return
+    else:
+        restart()
+    
 if __name__ == '__main__':
     app.run_server(debug=True)
