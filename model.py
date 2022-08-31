@@ -14,7 +14,7 @@ def model(train_data, k):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=12345)    
     knn = KNeighborsClassifier(n_neighbors=k)
     knn.fit(X_train, y_train)
-    print(knn.score(X_test, y_test))
+    #print(knn.score(X_test, y_test))
     y_pred_test = knn.predict(X_test)
     confusion_matrix = metrics.confusion_matrix(y_test, y_pred_test)
     
@@ -38,4 +38,4 @@ def predict(knn, data):
 train_data=pd.read_csv('train_data.csv')
 knn_model, c_matrix, neighbors, train_accuracy, test_accuracy = model(pd.read_csv('train_data.csv'), 3)
 
-# print(c_matrix, neighbors, train_accuracy, test_accuracy)
+#print(c_matrix, neighbors, train_accuracy, test_accuracy)

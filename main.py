@@ -202,7 +202,7 @@ app.layout = dbc.Container(children=[
                     ),
                     #slider - dertemine k
                     dbc.ModalBody(
-                        dcc.Slider(0, 50, 1, value=3, marks=None,
+                        dcc.Slider(1, 20, 1, value=3, marks=None,
                         tooltip={"placement": "bottom", "always_visible": True}, id="slider_k"), 
                         style={"backgroundColor": colors["lightblack"], "color":colors["white"],"border":'none'}
                     ),
@@ -410,13 +410,12 @@ def start_stop_prediction(n):
 
 #confusion matrix
 def confusion_matrix_plot(confusion_matrix):
-    y_axis=['Pozitivno', 'Neutralno', 'Negativno']
-    x_axis=['Negativno', "Neutralno", "Pozitivno" ]
+    categories=['Negativno', 'Neutralno', 'Pozitivno']
     fig= px.imshow(confusion_matrix, 
                     labels=dict(x="Stvarne oznake", y="Predviđene oznake"),
-                    x=x_axis,
-                    y=y_axis,
                     aspect="auto",
+                    x=categories,
+                    y=categories,
                     text_auto=True,
                     title="Matrica konfuzije",
                     color_continuous_scale="Teal",
@@ -428,37 +427,39 @@ def confusion_matrix_plot(confusion_matrix):
 #accuracy
 def accuracy_k_plot(neighbors, train_accuracy, test_accuracy):
     mode = 'lines'
-    fig = px.scatter(title="Točnost")
-    fig.add_scatter(name='Točnost na skupu za testiranje', x=neighbors, y=test_accuracy, mode=mode)
-    fig.add_scatter(name='Točnost na skupu za treniranje', x=neighbors, y=train_accuracy, mode=mode)
-    fig.update_layout(paper_bgcolor = colors["lightblack"], plot_bgcolor=colors["lightblack"], font = {'color': colors["white"]})
+    fig = px.scatter(title="Točnost modela")
+    fig.add_scatter(name='Testiranje', x=neighbors, y=test_accuracy, mode=mode)
+    fig.add_scatter(name='Treniranje', x=neighbors, y=train_accuracy, mode=mode)
+    fig.update_layout(yaxis={"title": "Točnost"},xaxis={"title":"Broj susjeda"},paper_bgcolor = colors["lightblack"], plot_bgcolor=colors["lightblack"], font = {'color': colors["white"]})
     fig.update_xaxes(showline=True, linewidth=1, linecolor=colors['darkgreyblue'], gridcolor=colors['darkgreyblue'])
     fig.update_yaxes(showline=True, linewidth=1, linecolor=colors['darkgreyblue'], gridcolor=colors['darkgreyblue'])
     return fig
-print(model.neighbors, model.train_accuracy, model.test_accuracy)
+
 @app.callback([Output('knn-confusion','figure'), Output('knn-accuracy','figure')],
                 [Input('slider_k', 'value'), Input('btn-change-k', 'n_clicks')])
 def update_model(value, n):
     if n is None or n == 0:
         return [confusion_matrix_plot(model.c_matrix), accuracy_k_plot(model.neighbors, model.train_accuracy, model.test_accuracy)] 
-    elif n!=0 and n is not None and n%2!=0:
+    elif n!=0 and n is not None:
         model.knn_model, model.c_matrix, model.neighbors, model.train_accuracy, model.test_accuracy = model.model(model.train_data, value)
         return [confusion_matrix_plot(model.c_matrix), accuracy_k_plot(model.neighbors, model.train_accuracy, model.test_accuracy)]
+    else:
+        return [confusion_matrix_plot(model.c_matrix), accuracy_k_plot(model.neighbors, model.train_accuracy, model.test_accuracy)]
 
-# #predict
-# @app.callback([Output('happy','style'),Output('neutral','style'),Output('sad','style')],
-#                 Input('interval-component3', 'n_intervals'))
-# def predict(n):
-#     df = pd.read_csv('data.csv')
-#     row = len(df)-1
-#     specdata=[df.iloc[row, 3:10]]
-#     prediction = model.predict(model.knn_model,specdata)
-#     if prediction == 0:
-#         return [{'color': colors["shadow"], "fontSize": 46},{'color': colors["shadow"], "fontSize": 46},{'color': colors["lightblue"], "fontSize": 46}]
-#     elif prediction == 2:
-#         return [{'color': colors["lightblue"], "fontSize": 46},{'color': colors["shadow"], "fontSize": 46},{'color': colors["shadow"], "fontSize": 46}]
-#     else:
-#         return [{'color': colors["shadow"], "fontSize": 46},{'color': colors["lightblue"], "fontSize": 46},{'color': colors["shadow"], "fontSize": 46}]
+#predict
+@app.callback([Output('happy','style'),Output('neutral','style'),Output('sad','style')],
+                Input('interval-component3', 'n_intervals'))
+def predict(n):
+    df = pd.read_csv('data.csv')
+    row = len(df)-1
+    specdata=[df.iloc[row, 3:10]]
+    prediction = model.predict(model.knn_model,specdata)
+    if prediction == 0:
+        return [{'color': colors["shadow"], "fontSize": 46},{'color': colors["shadow"], "fontSize": 46},{'color': colors["lightblue"], "fontSize": 46}]
+    elif prediction == 2:
+        return [{'color': colors["lightblue"], "fontSize": 46},{'color': colors["shadow"], "fontSize": 46},{'color': colors["shadow"], "fontSize": 46}]
+    else:
+        return [{'color': colors["shadow"], "fontSize": 46},{'color': colors["lightblue"], "fontSize": 46},{'color': colors["shadow"], "fontSize": 46}]
 
 
 if __name__ == '__main__':
