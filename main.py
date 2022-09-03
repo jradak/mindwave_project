@@ -84,17 +84,12 @@ app.layout = dbc.Container(children=[
             dbc.Card(dbc.CardBody([
                 html.Div(
                     html.I(className="bi bi-emoji-laughing-fill"),
-                    style={"color": colors["shadow"], "fontSize": 46},
+                    style={"color": colors["shadow"], "fontSize": 69},
                     id='happy'
                 ),
                 html.Div(
-                    html.I(className="bi bi-emoji-neutral-fill"),
-                    style={"color": colors["lightblue"], "fontSize": 46},
-                    id='neutral'
-                ),
-                html.Div(
                     html.I(className="bi bi-emoji-frown-fill"),
-                    style={"color": colors["shadow"], "fontSize": 46},
+                    style={"color": colors["shadow"], "fontSize": 69},
                     id='sad'
                 ),
                 dbc.Button(html.I(className="bi bi-play"),
@@ -110,7 +105,6 @@ app.layout = dbc.Container(children=[
                 dbc.RadioItems(
                     options=[
                         {"label": "Pozitivno", "value": 'pozitivno'},
-                        {"label": "Neutralno", "value": 'neutralno'},
                         {"label": "Negativno", "value": 'negativno'},
                     ],
                     value='neutralno',
@@ -127,7 +121,7 @@ app.layout = dbc.Container(children=[
                     style={"marginTop": 40, "marginBottom": 40},
                     id="radioitems-input"
                 ),
-                dcc.Interval(id='interval-component2', interval=1*1000, n_intervals=0, disabled=True, max_intervals=15),
+                dcc.Interval(id='interval-component2', interval=1*1000, n_intervals=0, disabled=True, max_intervals=8),
                 dbc.ButtonGroup([
                     dbc.Button(html.I(className="bi bi-play"), 
                         id="btn-play", n_clicks=0, color="light",
@@ -141,9 +135,9 @@ app.layout = dbc.Container(children=[
                         id="btn-forward", n_clicks=0, color="light", 
                         style={"backgroundColor": colors["lightblue"], "color": colors["lightblack"], "border":"none"}
                     )
-                ], size="lg",style={"marginTop": 10, "marginBottom": 10}),
+                ], size="lg",style={"marginTop": 20, "marginBottom": 20}),
                 html.Div(id='output-csv'),
-                html.Div(id='download-csv', style={"marginTop": 10, "marginBottom": 10}),
+                html.Div(id='download-csv', style={"marginTop": 22, "marginBottom": 10}),
             ]),
             color=colors['lightblack'], style={"textAlign":"center"})
         ]),
@@ -394,6 +388,7 @@ def disconnect(n):
     if n is None or n == 0:
         return
     else:
+        reader.stop()
         restart()
 
 #start interval for prediction
@@ -410,7 +405,7 @@ def start_stop_prediction(n):
 
 #confusion matrix
 def confusion_matrix_plot(confusion_matrix):
-    categories=['Negativno', 'Neutralno', 'Pozitivno']
+    categories=['Negativno', 'Pozitivno']
     fig= px.imshow(confusion_matrix, 
                     labels=dict(x="Stvarne oznake", y="Predviđene oznake"),
                     aspect="auto",
@@ -436,7 +431,7 @@ def accuracy_k_plot(neighbors, train_accuracy, test_accuracy):
     return fig
 
 @app.callback([Output('knn-confusion','figure'), Output('knn-accuracy','figure')],
-                [Input('slider_k', 'value'), Input('btn-change-k', 'n_clicks')])
+                 [Input('slider_k', 'value'), Input('btn-change-k', 'n_clicks')])
 def update_model(value, n):
     if n is None or n == 0:
         return [confusion_matrix_plot(model.c_matrix), accuracy_k_plot(model.neighbors, model.train_accuracy, model.test_accuracy)] 
@@ -447,19 +442,20 @@ def update_model(value, n):
         return [confusion_matrix_plot(model.c_matrix), accuracy_k_plot(model.neighbors, model.train_accuracy, model.test_accuracy)]
 
 #predict
-@app.callback([Output('happy','style'),Output('neutral','style'),Output('sad','style')],
+@app.callback([Output('happy','style'),Output('sad','style')],
                 Input('interval-component3', 'n_intervals'))
 def predict(n):
     df = pd.read_csv('data.csv')
     row = len(df)-1
+    #3-10
     specdata=[df.iloc[row, 3:10]]
     prediction = model.predict(model.knn_model,specdata)
     if prediction == 0:
-        return [{'color': colors["shadow"], "fontSize": 46},{'color': colors["shadow"], "fontSize": 46},{'color': colors["lightblue"], "fontSize": 46}]
-    elif prediction == 2:
-        return [{'color': colors["lightblue"], "fontSize": 46},{'color': colors["shadow"], "fontSize": 46},{'color': colors["shadow"], "fontSize": 46}]
+        return [{'color': colors["shadow"], "fontSize": 69},{'color': colors["lightblue"], "fontSize": 69}]
+    elif prediction == 1:
+        return [{'color': colors["lightblue"], "fontSize": 69},{'color': colors["shadow"], "fontSize": 69}]
     else:
-        return [{'color': colors["shadow"], "fontSize": 46},{'color': colors["lightblue"], "fontSize": 46},{'color': colors["shadow"], "fontSize": 46}]
+        return [{'color': colors["shadow"], "fontSize": 69},{'color': colors["shadow"], "fontSize": 69}]
 
 
 if __name__ == '__main__':

@@ -5,7 +5,8 @@ from sklearn import metrics
 from sklearn import preprocessing
 import numpy as np
 
-#0-pozitivno 1-neutralno 2-negativno
+#1-pozitivno 0-negativno
+
 min_max_scaler = preprocessing.MinMaxScaler()
 def model(train_data, k):
     ind_atr = train_data.columns[3:-1]
@@ -16,16 +17,16 @@ def model(train_data, k):
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=12345)    
     
-    X_minmax_train = min_max_scaler.fit_transform(X_train)
-    X_minmax_test = min_max_scaler.transform(X_test)
+    X_minmax_train = min_max_scaler.fit_transform(X_train.values)
+    X_minmax_test = min_max_scaler.transform(X_test.values)
     
-    #feature_range=(0, 1)?
     #metric='minkowski'->default, canberra? 
+    #metric="minkowski", p=2
     knn = KNeighborsClassifier(n_neighbors=k)
     
-    # knn.fit(X_train, y_train)
+    #knn.fit(X_train, y_train)
     knn.fit(X_minmax_train, y_train)
-    
+
     #print(knn.score(X_test, y_test))
     
     #y_pred_test = knn.predict(X_test)
@@ -33,19 +34,21 @@ def model(train_data, k):
     
     confusion_matrix = metrics.confusion_matrix(y_test, y_pred_test)
     
-    neighbors = np.arange(1, 9)
+    neighbors = np.arange(1, 20)
     train_accuracy = np.empty(len(neighbors))
     test_accuracy = np.empty(len(neighbors))
   
     for i, k in enumerate(neighbors):
         knn = KNeighborsClassifier(n_neighbors=k)
+        # knn.fit(X_train, y_train)
         knn.fit(X_minmax_train, y_train)
-      
+        # train_accuracy[i] = knn.score(X_train, y_train)
+        # test_accuracy[i] = knn.score(X_test, y_test)
         train_accuracy[i] = knn.score(X_minmax_train, y_train)
         test_accuracy[i] = knn.score(X_minmax_test, y_test)
     
-    return knn, confusion_matrix, neighbors, train_accuracy, test_accuracy 
-
+    return knn, confusion_matrix, neighbors, train_accuracy, test_accuracy
+    
 def predict(knn, data):
     pred_minmax= min_max_scaler.transform(data)
     #prediction = knn.predict(data)
@@ -54,6 +57,6 @@ def predict(knn, data):
 
 train_data=pd.read_csv('train_data.csv')
 
-knn_model, c_matrix, neighbors, train_accuracy, test_accuracy = model(pd.read_csv('train_data.csv'), 3)
+knn_model, c_matrix, neighbors, train_accuracy, test_accuracy = model(train_data, 3)
 
 #print(c_matrix, neighbors, train_accuracy, test_accuracy)
