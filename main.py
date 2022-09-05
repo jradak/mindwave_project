@@ -105,6 +105,7 @@ app.layout = dbc.Container(children=[
                 dbc.RadioItems(
                     options=[
                         {"label": "Pozitivno", "value": 'pozitivno'},
+                        {"label": "Neutralno", "value": 'neutralno'},
                         {"label": "Negativno", "value": 'negativno'},
                     ],
                     value='neutralno',
@@ -121,7 +122,7 @@ app.layout = dbc.Container(children=[
                     style={"marginTop": 40, "marginBottom": 40},
                     id="radioitems-input"
                 ),
-                dcc.Interval(id='interval-component2', interval=1*1000, n_intervals=0, disabled=True, max_intervals=8),
+                dcc.Interval(id='interval-component2', interval=1*1000, n_intervals=0, disabled=True, max_intervals=15),
                 dbc.ButtonGroup([
                     dbc.Button(html.I(className="bi bi-play"), 
                         id="btn-play", n_clicks=0, color="light",
@@ -135,9 +136,9 @@ app.layout = dbc.Container(children=[
                         id="btn-forward", n_clicks=0, color="light", 
                         style={"backgroundColor": colors["lightblue"], "color": colors["lightblack"], "border":"none"}
                     )
-                ], size="lg",style={"marginTop": 20, "marginBottom": 20}),
+                ], size="lg",style={"marginTop": 10, "marginBottom": 10}),
                 html.Div(id='output-csv'),
-                html.Div(id='download-csv', style={"marginTop": 22, "marginBottom": 10}),
+                html.Div(id='download-csv', style={"marginTop": 10, "marginBottom": 10}),
             ]),
             color=colors['lightblack'], style={"textAlign":"center"})
         ]),
@@ -447,16 +448,13 @@ def update_model(value, n):
 def predict(n):
     df = pd.read_csv('data.csv')
     row = len(df)-1
-    #3-10
     specdata=[df.iloc[row, 3:10]]
-    prediction = model.predict(model.knn_model,specdata)
+    prediction, predict_proba = model.predict(model.knn_model,specdata)
+    pred_proba_split = np.array_split(predict_proba[0], 3)
     if prediction == 0:
-        return [{'color': colors["shadow"], "fontSize": 69},{'color': colors["lightblue"], "fontSize": 69}]
-    elif prediction == 1:
-        return [{'color': colors["lightblue"], "fontSize": 69},{'color': colors["shadow"], "fontSize": 69}]
+          return [{'color': colors["shadow"], "fontSize": 69},{'color': colors["lightblue"], "fontSize": 69}]
     else:
-        return [{'color': colors["shadow"], "fontSize": 69},{'color': colors["shadow"], "fontSize": 69}]
-
+        return [{'color': colors["lightblue"], "fontSize": 69},{'color': colors["shadow"], "fontSize": 69}]
 
 if __name__ == '__main__':
     app.run_server(debug=True)
